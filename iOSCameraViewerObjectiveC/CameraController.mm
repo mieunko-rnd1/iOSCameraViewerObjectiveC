@@ -31,18 +31,15 @@
 	return isAuth;
 }
 
-- (bool) connect {
-	if ([self isAuthorized] == false)
-		return false;
-	
-	self.isWebCam = false;
-	self.isConnected = false;
-	
-	bool isFound = false;
-	AVCaptureDevice* captureDevice = nil;
+- (bool) isCameraExist {
 	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
-	AVCaptureDeviceDiscoverySession* discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-	NSArray* devices = discoverySession.devices;
+	AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+	NSArray* devices = sessions.devices;
+	bool isFound = false;
+	
+	if ([devices count] == 0)
+		return isFound;
+	
 	for (AVCaptureDevice* device in devices) {
 		if([device deviceType] == AVCaptureDeviceTypeExternal) {
 			const char* name = [[device localizedName] UTF8String];
@@ -56,116 +53,134 @@
 			}
 			
 			if (isFound) {
-				captureDevice = device;
-				NSLog(@"[connect] Find External Camera: %s\n", name);
 				break;
 			}
 		}
 	}
 	
-	NSLog(@"[connect] Unique ID: %@, Model ID: %@", captureDevice.uniqueID, captureDevice.modelID);
+	return isFound;
+}
+
+- (NSString*) getDetectCameraDeviceName {
+	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
+	AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+	NSArray* devices = sessions.devices;
 	
-	if (self.isWebCam == false) {
-		AVCaptureDeviceFormat* desiredFormat = nil;
-		int maxWidth = 0;
-		int maxHeight = 0;
-		NSArray* availableFormats = captureDevice.formats;
-		for (AVCaptureDeviceFormat* format in availableFormats) {
-			// Get the format description for this format
-			CMFormatDescriptionRef formatDescription = format.formatDescription;
-			
-			// Get the dimensions (resolution) of the video format
-			CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(formatDescription);
-			
-			// Get the resolution
-			CGFloat width = dimensions.width;
-			CGFloat height = dimensions.height;
-			
-			// Get the pixel format type from the format description
-			OSType pixelFormat = CMFormatDescriptionGetMediaSubType(formatDescription);
-			// Check and log the pixel format
-			switch (pixelFormat) {
-				case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
-					NSLog(@"[connect] Pixel Format: 420YpCbCr8BiPlanarFullRange");
-					desiredFormat = format;
-					maxWidth = width;
-					maxHeight = height;
-					break;
-				case kCVPixelFormatType_420YpCbCr8PlanarFullRange:
-					NSLog(@"[connect] Pixel Format: 420YpCbCr8PlanarFullRange");
-					break;
-				case kCVPixelFormatType_420YpCbCr8Planar:
-					NSLog(@"[connect] Pixel Format: 420YpCbCr8Planar");
-					break;
-				case kCVPixelFormatType_32BGRA:
-					NSLog(@"[connect] Pixel Format: 32BGRA");
-					break;
-				default:
-					NSLog(@"[connect] Unknown Pixel Format: %u", pixelFormat);
-					break;
+	if ([devices count] == 0)
+		return @"";
+	
+	for (AVCaptureDevice* device in devices) {
+		if([device deviceType] == AVCaptureDeviceTypeExternal) {
+			const char* name = [[device localizedName] UTF8String];
+			NSString* strName = [NSString stringWithUTF8String:name];
+			if ([strName  isEqual: @"C270 HD WEBCAM"]) {
+				return strName;
 			}
-			
-			// Get the supported frame rate ranges for this format
-			NSArray *frameRateRanges = format.videoSupportedFrameRateRanges;
-			
-			// Loop through each frame rate range and log the min and max FPS
-			for (AVFrameRateRange *frameRateRange in frameRateRanges) {
-				float minFrameRate = frameRateRange.minFrameRate;
-				float maxFrameRate = frameRateRange.maxFrameRate;
-				
-				// Log the frame rate range
-				NSLog(@"[connect] Supported FPS for format: %.2f - %.2f fps", minFrameRate, maxFrameRate);
+			else if ([strName  isEqual: @"Medit MO3"]) {
+				return strName;
 			}
-		}
-		
-		// Log or process the resolution
-		NSLog(@"[connect] Supported Resolution: %.0dx%.0d", maxWidth, maxHeight);
-		
-		
-		if (desiredFormat) {
-			NSError *error = nil;
-			if ([captureDevice lockForConfiguration:&error]) {
-				
-				captureDevice.activeFormat = desiredFormat;
-				
-				[captureDevice unlockForConfiguration];
-			} else {
-				NSLog(@"[connect] Error locking device for configuration: %@", error.localizedDescription);
-			}
-		} else {
-			NSLog(@"[connect] Desired format not found.");
 		}
 	}
 	
-	self.captureSession = [[AVCaptureSession alloc] init];
-	if (!self.captureSession) {
-		NSLog(@"[connect] Cannot found capture session");
+	return @"";
+}
+
+- (bool) setVideoInputFormat: (int)width height:(int)height frameRate:(float)frameRate fourCC:(NSString*)fourCC {
+	if (!self.captureDevice) {
+		return false;
 	}
 	
-	[self.captureSession beginConfiguration];
+	NSArray* availableFormats = self.captureDevice.formats;
+	for (AVCaptureDeviceFormat* format in availableFormats) {
+		CMFormatDescriptionRef description = format.formatDescription;
+		CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(description);
+		
+		NSArray* frameRateRanges = format.videoSupportedFrameRateRanges;
+		float minFrameRate = 0.0f;
+		float maxFrameRate = 0.0f;
+		if ([frameRateRanges count] == 0) {
+			return false;
+		}
+		
+		AVFrameRateRange* frameRateRange = [format.videoSupportedFrameRateRanges objectAtIndex:0];
+		minFrameRate = frameRateRange.minFrameRate;
+		maxFrameRate = frameRateRange.maxFrameRate;
+		
+		OSType subType = CMFormatDescriptionGetMediaSubType(description);
+		NSString* fourCCString = [NSString stringWithFormat:@"%c%c%c%c",
+								  (subType >> 24) & 0xff,
+								  (subType >> 16) & 0xff,
+								  (subType >> 8) & 0xff,
+								  subType & 0xff];
+		
+		if ((dimensions.width == width) && (dimensions.height == height) && [fourCCString isEqualToString:fourCC]  &&
+			(minFrameRate <= frameRate) && (maxFrameRate >= frameRate)) {
+			NSError *error;
+			if (![self.captureDevice lockForConfiguration:&error]) {
+				NSLog(@"Could not lock device %@ for configuration: %@", self, error);
+				return false;
+			}
+			
+			self.captureDevice.activeFormat = format;
+			self.captureDevice.activeVideoMinFrameDuration = CMTimeMake(1, frameRate);
+			self.captureDevice.activeVideoMaxFrameDuration = CMTimeMake(1, frameRate);
+			
+			[self.captureDevice unlockForConfiguration];
+			
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+- (bool) prepareVideoInput {
+	if (!self.captureSession || !self.captureDevice) {
+		return false;
+	}
 	
 	@try {
+		// 원하는 포맷 설정
+		int width = 1104;
+		int height = 6440;
+		double frameRate = 30.0;
+		NSString* fourCC = @"420f"; // 예: "420v" 또는 "420f"
+		
+		if ([self setVideoInputFormat:width height:height frameRate:frameRate fourCC:fourCC] == false) {
+			NSLog(@"Failed to set video format...!");
+			return false;
+		}
+		
 		// Camera Device Input 만들기
-		AVCaptureDeviceInput* videoInput = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:nil];
+		AVCaptureDeviceInput* videoInput = [AVCaptureDeviceInput deviceInputWithDevice:self.captureDevice error:nil];
 		if (!videoInput) {
-			NSLog(@"[connect] Cannot found video input");
+			NSLog(@"Cannot found video input...!");
+			return false;
 		}
 		
 		if (![self.captureSession canAddInput:videoInput]) {
-			NSLog(@"[connect] Cannot found video input session");
+			NSLog(@"Cannot found video input session...!");
 			return false;
 		}
 		
 		// Capture Session에 AVCaptureDeviceInput 객체 추가
 		[self.captureSession addInput:videoInput];
 	} @catch (NSException *exception) {
-		NSLog(@"[connect] %@", exception.reason);
+		NSLog(@"Cannot found video input ... %@", exception.reason);
+		return false;
 	}
 	
-	NSLog(@"[connect] Add output");
-	AVCaptureVideoDataOutput* videoOutput = [[AVCaptureVideoDataOutput alloc] init];
-	if (!videoOutput) {
-		NSLog(@"[connect] Cannot found video output");
+	return true;
+}
+
+- (bool) prepareVideoOutput {
+	if (!self.captureSession) {
+		return false;
+	}
+	
+	AVCaptureVideoDataOutput* output = [[AVCaptureVideoDataOutput alloc] init];
+	if (!output) {
+		NSLog(@"Cannot found video output...!");
 	}
 	
 	// Video output에 Pixel Format 설정
@@ -173,33 +188,106 @@
 		NSDictionary* videoSettings = @{
 			(id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
 		};
-		videoOutput.videoSettings = videoSettings;
+		output.videoSettings = videoSettings;
 	}
 	else {
 		NSDictionary* videoSettings = @{
-			(id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange),
-			// kCVPixelFormatType_Lossy_420YpCbCr8BiPlanarFullRange
-			// kCVPixelFormatType_420YpCbCr8BiPlanarFullRange,
-			// kCVPixelFormatType_32BGRA
+			(id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
 			(id)kCVPixelBufferWidthKey : @(1104),  // maxWidth // 1920 // 1104
 			(id)kCVPixelBufferHeightKey : @(6440) // maxHeight // 1080 // 6440
 		};
-		videoOutput.videoSettings = videoSettings;
+		
+		output.videoSettings = videoSettings;
 	}
 	
-	NSLog(@"[connect] videoDataOutput.videoSettings: %@", videoOutput.videoSettings);
-	
-	if (![self.captureSession canAddOutput:videoOutput]) {
-		NSLog(@"[connect] Cannot found video output session");
+	if (![self.captureSession canAddOutput:output]) {
+		NSLog(@"Cannot found video output session...!");
 		return false;
 	}
 	
 	// Capture Session에 AVCaptureDeviceOutput 객체 추가
-	[self.captureSession addOutput:videoOutput];
+	[self.captureSession addOutput:output];
 	
 	// Buffer 설정
 	self.videoQueue = dispatch_queue_create("videoQueue", DISPATCH_QUEUE_SERIAL);
-	[videoOutput setSampleBufferDelegate:self queue:self.videoQueue];
+	[output setSampleBufferDelegate:self queue:self.videoQueue];
+	
+	return true;
+}
+
+- (bool) connect {
+	if ([self isAuthorized] == false) {
+		NSLog(@"Permission is not granted...!");
+		return false;
+	}
+	
+	if ([self isCameraExist] == false) {
+		NSLog(@"Cannot found camera device...!");
+		return false;
+	}
+	
+	if ([self getDetectCameraDeviceName].length == 0) {
+		NSLog(@"Cannot detect camera device name...!");
+		return false;
+	}
+	
+	self.isWebCam = false;
+	self.isConnected = false;
+	
+	bool isFound = false;
+	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
+	AVCaptureDeviceDiscoverySession* discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+	NSArray* devices = discoverySession.devices;
+	
+	if ([devices count] == 0) {
+		NSLog(@"Cannot found capture devices...!");
+		return false;
+	}
+	
+	// Capture Session에 대한 입력을 제공
+	for (AVCaptureDevice* device in devices) {
+		if([device deviceType] == AVCaptureDeviceTypeExternal) {
+			const char* name = [[device localizedName] UTF8String];
+			NSString* strName = [NSString stringWithUTF8String:name];
+			if ([strName  isEqual: @"C270 HD WEBCAM"]) {
+				isFound = true;
+				self.isWebCam = true;
+			}
+			else if ([strName  isEqual: @"Medit MO3"]) {
+				isFound = true;
+			}
+			
+			if (isFound) {
+				self.captureDevice = device;
+				NSLog(@"Find External Camera: %s\n", name);
+				break;
+			}
+		}
+	}
+	
+	NSLog(@"Unique ID: %@, Model ID: %@", self.captureDevice.uniqueID, self.captureDevice.modelID);
+	
+	self.captureSession = [[AVCaptureSession alloc] init];
+	if (!self.captureSession) {
+		NSLog(@"Cannot found capture session...!");
+		return false;
+	}
+	
+	self.captureSession.sessionPreset = AVCaptureSessionPresetInputPriority;
+	
+	[self.captureSession beginConfiguration];
+	
+	if ([self prepareVideoInput] == false) {
+		NSLog(@"Cannot found video input...!");
+		[self.captureSession commitConfiguration];
+		return false;
+	}
+	
+	if ([self prepareVideoOutput] == false) {
+		NSLog(@"Cannot found video output...!");
+		[self.captureSession commitConfiguration];
+		return false;
+	}
 	
 	[self.captureSession commitConfiguration];
 	
@@ -224,6 +312,7 @@
 	
 	[self.captureSession commitConfiguration];
 	
+	self.captureDevice = NULL; // ????
 	self.videoQueue = NULL;
 	
 	return true;
@@ -234,8 +323,8 @@
 		return true;
 	}
 	
-	NSLog(@"[startStreaming] session start %@", self.captureSession);
-	dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+	NSLog(@"session start %@", self.captureSession);
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
 		//Background Thread
 		dispatch_async(self.videoQueue, ^(void){
 			//Run UI Updates
@@ -259,7 +348,7 @@
 		return true;
 	}
 	
-	NSLog(@"[stopStreaming] session stop");
+	NSLog(@"session stop");
 	[self.captureSession stopRunning];
 	
 	return true;
@@ -296,11 +385,11 @@ int imageSaveCount = 0;
 	memcpy(byteData, [nsData bytes], len);
 	
 	NSLog(@"%02X, %02X", byteData[0], byteData[1]);
-	
+	/*
 	if (self.isWebCam == false) {
 		return;
 	}
-	
+	*/
 	//NSData* resultData = [NSData dataWithBytes:byteData length:sizeof(byteData)];
 	
 	// Create a Quartz direct-access data provider that uses data we supply.

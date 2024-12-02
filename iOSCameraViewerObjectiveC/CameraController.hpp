@@ -14,6 +14,7 @@
 
 @interface CameraController : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 
+@property (nonatomic, strong) AVCaptureDevice* captureDevice;
 @property (nonatomic, strong) AVCaptureSession* captureSession;
 @property (nonatomic, strong) dispatch_queue_t videoQueue;
 @property (nonatomic) bool isWebCam;
@@ -23,6 +24,11 @@
 
 
 - (bool) isAuthorized;
+- (bool) isCameraExist;
+- (NSString*) getDetectCameraDeviceName;
+- (bool) setVideoInputFormat: (int)width height:(int)height frameRate:(float)frameRate fourCC:(NSString*)fourCC;
+- (bool) prepareVideoInput;
+- (bool) prepareVideoOutput;
 
 - (bool) connect;
 - (bool) disconnect;
