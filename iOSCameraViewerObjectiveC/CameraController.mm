@@ -1,6 +1,6 @@
 #include "CameraController.hpp"
 
-#include <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>
 
 @implementation CameraController
 
@@ -360,23 +360,16 @@ int imageSaveCount = 0;
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
 	// Get Raw Pixel
 	CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-	
+
 	// lock image buffer
 	CVPixelBufferLockBaseAddress(imageBuffer, 0);
-	/*
-	CIImage* image = [CIImage imageWithCVPixelBuffer:imageBuffer];
-	if ([self.cameraManagerDelegate respondsToSelector:@selector(captureImageOutput:)]) {
-		[self.cameraManagerDelegate captureImageOutput:image];
-	}
-	*/
+	
 	uint8_t* baseAddress = (uint8_t*)CVPixelBufferGetBaseAddress(imageBuffer);
 	
 	size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
-	size_t bufferWidth = CVPixelBufferGetWidth(imageBuffer);
-	size_t bufferHeight = CVPixelBufferGetHeight(imageBuffer);
+	size_t width = CVPixelBufferGetWidth(imageBuffer);
+	size_t height = CVPixelBufferGetHeight(imageBuffer);
 	size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
-	
-	NSLog(@"bytesPerRow: %zu, bufferWidth: %zu, bufferHeight: %zu, bufferSize: %zu", bytesPerRow, bufferWidth, bufferHeight, bufferSize);
 	
 	// 방법 1
 	NSData* nsData = [NSData dataWithBytes:baseAddress length:bufferSize];
@@ -384,7 +377,11 @@ int imageSaveCount = 0;
 	unsigned char* byteData = (unsigned char*)malloc(len);
 	memcpy(byteData, [nsData bytes], len);
 	
-	NSLog(@"%02X, %02X", byteData[0], byteData[1]);
+	// CameraManagerDelegate
+	if ([self.cameraControllerDelegate respondsToSelector:@selector(captureImageOutput:width:height:bufferSize:bytesPerRow:)]) {
+		[self.cameraControllerDelegate captureImageOutput:byteData width:width height:height bufferSize:bufferSize bytesPerRow:bytesPerRow];
+	}
+	
 	/*
 	if (self.isWebCam == false) {
 		return;
@@ -396,7 +393,7 @@ int imageSaveCount = 0;
 	CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, byteData, bufferSize, NULL);
 	// Create a bitmap image from data supplied by the data provider.
 	CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
-	CGImageRef cgImage = CGImageCreate(bufferWidth, bufferHeight, 8, 32, bytesPerRow,
+	CGImageRef cgImage = CGImageCreate(width, height, 8, 32, bytesPerRow,
 									   rgbColorSpace, kCGImageAlphaNoneSkipFirst | (CGBitmapInfo)kCGBitmapByteOrder32Little,
 									   dataProvider, NULL, true, kCGRenderingIntentDefault);
 	CGDataProviderRelease(dataProvider);
@@ -414,7 +411,7 @@ int imageSaveCount = 0;
 	CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
 	CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
 	// Create a bitmap image from data supplied by the data provider.
-	CGImageRef cgImage = CGImageCreate(bufferWidth, bufferHeight, 8, 32, bytesPerRow,
+	CGImageRef cgImage = CGImageCreate(width, height, 8, 32, bytesPerRow,
 									   rgbColorSpace, kCGImageAlphaNoneSkipFirst | (CGBitmapInfo)kCGBitmapByteOrder32Little,
 									   dataProvider, NULL, true, kCGRenderingIntentDefault);
 	CGDataProviderRelease(dataProvider);
@@ -427,7 +424,7 @@ int imageSaveCount = 0;
 	// 방법 3
 	// Create a bitmap graphics context with the sample buffer data
 	CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
-	CGContextRef context = CGBitmapContextCreate(baseAddress, bufferWidth, bufferHeight, 8, bytesPerRow,
+	CGContextRef context = CGBitmapContextCreate(baseAddress, width, height, 8, bytesPerRow,
 												rgbColorSpace,
 												(CGBitmapInfo)kCGBitmapByteOrder32Little |
 												kCGImageAlphaPremultipliedFirst);

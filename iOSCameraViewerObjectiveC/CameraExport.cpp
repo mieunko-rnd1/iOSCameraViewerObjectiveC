@@ -1,19 +1,20 @@
-#include "CameraWrapper.hpp"
+#include "CameraExport.hpp"
+
 #include "CameraManager.hpp"
 
 CameraManager* manager = nullptr;
 
-CameraWrapper::CameraWrapper()
+CameraExport::CameraExport()
 {
 	
 }
 
-CameraWrapper::~CameraWrapper()
+CameraExport::~CameraExport()
 {
 	
 }
 
-bool CameraWrapper::connect()
+bool CameraExport::connect()
 {
 	if (manager == nullptr)
 	{
@@ -28,12 +29,12 @@ bool CameraWrapper::connect()
 	return false;
 }
 
-bool CameraWrapper::isConnected()
+bool CameraExport::isConnected()
 {
 	return true;
 }
 
-bool CameraWrapper::disconnect()
+bool CameraExport::disconnect()
 {
 	if (manager != nullptr)
 	{
@@ -49,7 +50,7 @@ bool CameraWrapper::disconnect()
 	return true;
 }
 
-bool CameraWrapper::startStreaming()
+bool CameraExport::startStreaming()
 {
 	if (manager != nullptr)
 	{
@@ -59,7 +60,7 @@ bool CameraWrapper::startStreaming()
 	return false;
 }
 
-bool CameraWrapper::stopStreaming()
+bool CameraExport::stopStreaming()
 {
 	if (manager != nullptr)
 	{
@@ -69,7 +70,7 @@ bool CameraWrapper::stopStreaming()
 	return false;
 }
 
-bool CameraWrapper::isStreaming()
+bool CameraExport::isStreaming()
 {
 	return true;
 }

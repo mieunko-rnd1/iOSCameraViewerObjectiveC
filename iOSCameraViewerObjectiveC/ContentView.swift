@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-	var testObj = CameraExport()
+	var testObj = CameraModule()
 	//var testObj = CameraController()
 	var body: some View {
 		ZStack {

@@ -3,4 +3,4 @@
 //
 
 #include "CameraController.hpp"
-#include "CameraExport.hpp"
+#include "CameraModule.hpp"

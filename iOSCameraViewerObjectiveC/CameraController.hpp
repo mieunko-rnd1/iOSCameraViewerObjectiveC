@@ -4,13 +4,7 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-/*
-@protocol CameraManagerDelegate <NSObject>
-
-- (void)captureImageOutput:(CIImage*)image;
-
-@end
-*/
+#import "CameraControllerDelegate.h"
 
 @interface CameraController : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 
@@ -20,8 +14,7 @@
 @property (nonatomic) bool isWebCam;
 @property (nonatomic) bool isConnected;
 
-//@property (nonatomic, weak) id<CameraManagerDelegate> cameraManagerDelegate;
-
+@property (nonatomic, weak) id<CameraControllerDelegate> cameraControllerDelegate;
 
 - (bool) isAuthorized;
 - (bool) isCameraExist;
