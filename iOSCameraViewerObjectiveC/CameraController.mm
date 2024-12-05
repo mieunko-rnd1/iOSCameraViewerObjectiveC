@@ -1,4 +1,5 @@
 #include "CameraController.hpp"
+#include "CameraHelper.h"
 
 #import <UIKit/UIKit.h>
 
@@ -377,10 +378,7 @@ int imageSaveCount = 0;
 	unsigned char* byteData = (unsigned char*)malloc(len);
 	memcpy(byteData, [nsData bytes], len);
 	
-	// CameraManagerDelegate
-	if ([self.cameraControllerDelegate respondsToSelector:@selector(captureImageOutput:width:height:bufferSize:bytesPerRow:)]) {
-		[self.cameraControllerDelegate captureImageOutput:byteData width:width height:height bufferSize:bufferSize bytesPerRow:bytesPerRow];
-	}
+	Camera::ImageCallbacks::captureImageOutput();
 	
 	/*
 	if (self.isWebCam == false) {

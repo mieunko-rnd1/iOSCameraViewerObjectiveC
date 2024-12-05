@@ -1,115 +1,48 @@
 #include "CameraManager.hpp"
 
 #include "CameraController.hpp"
-#include "CameraControllerDelegate.h"
 
+
+std::function<void(Camera::CameraImageCallback*)> ImageCallbackWrapper::callback_ = nullptr;
+void ImageCallbackWrapper::imageCallback(Camera::CameraImageCallback* callback)
+{
+	if (ImageCallbackWrapper::callback_)
+		return ImageCallbackWrapper::callback_(callback);
+}
 
 CameraController* controller = nil;
 
-@interface CameraDelegate : NSObject <CameraControllerDelegate>
-
-@property (nonatomic) ImageBuffer* imageBuffer;
-@property (nonatomic) bool isConnected;
-
-@end // CameraDelegate
-
-@implementation CameraDelegate
-
-- (bool)activateDelegate {
-	if (controller != nil) {
-		controller.cameraControllerDelegate = self;
-		
-		self.imageBuffer = new ImageBuffer;
-		self.isConnected = true;
-		
-		return true;
-	}
-	
-	return false;
-}
-
-- (void)deactivateDelegate {
-	self.isConnected = false;
-	
-	if (self.imageBuffer) {
-		delete[] self.imageBuffer;
-		self.imageBuffer = nullptr;
-	}
-}
-
-- (bool)getRawImageBuffer:(ImageBuffer&)imageBuffer {
-	if (self.isConnected == false)
-		return false;
-	
-	if (self.imageBuffer == nullptr)
-		return false;
-	
-	imageBuffer = *self.imageBuffer;
-	
-	return true;
-}
-
-- (void)captureImageOutput:(unsigned char*)image width:(size_t)width height:(size_t)height bufferSize:(size_t)bufferSize bytesPerRow:(size_t)bytesPerRow {
-	self.imageBuffer->setBuffer(image, width, height, bufferSize, bytesPerRow);
-	
-	NSLog(@"%02X, %02X", image[0], image[1]);
-	NSLog(@"bytesPerRow: %zu, bufferWidth: %zu, bufferHeight: %zu, bufferSize: %zu", bytesPerRow, width, height, bufferSize);
-}
-
-@end // CameraDelegate
-
-
-CameraDelegate* camDelegate = nil;
-
-CameraManager::CameraManager()
-{
+CameraManager::CameraManager() {
 	
 }
 
-CameraManager::~CameraManager()
-{
+CameraManager::~CameraManager() {
 	
 }
 
-bool CameraManager::connect()
-{
+bool CameraManager::connect() {
 	if (controller == nil)
 		controller = [[CameraController alloc] init];
-		//controller = [CameraController new];
-	
-	if (camDelegate == nil)
-		camDelegate = [[CameraDelegate alloc] init];
 	
 	if (controller != nil)
 	{
 		if ([controller connect])
 		{
-			if (camDelegate != nil)
-			{
-				if ([camDelegate activateDelegate]) {
-					return true;
-				}
-			}
+			setImageCallback(std::bind(&CameraManager::receiveImageCallback, this, std::placeholders::_1));
+			//Camera::ImageCallbacks::setCameraImageCallback(CameraManager::imageCallback);
+			return true;
 		}
 	}
 	
 	return false;
 }
 
-bool CameraManager::isConnected()
-{
+bool CameraManager::isConnected() {
 	return false;
 }
 
 bool CameraManager::disconnect()
 {
-	[camDelegate deactivateDelegate];
-	
-	if (camDelegate != nil) {
-		[camDelegate release];
-		camDelegate = nil;
-	}
-	
 	if (controller != nil)
 	{
 		if ([controller disconnect] == false)
@@ -124,12 +57,9 @@ bool CameraManager::disconnect()
 	return true;
 }
 
-bool CameraManager::startStreaming()
-{
-	if (controller != nil)
-	{
-		if ([controller startStreaming])
-		{
+bool CameraManager::startStreaming() {
+	if (controller != nil) {
+		if ([controller startStreaming]) {
 			return true;
 		}
 	}
@@ -137,12 +67,9 @@ bool CameraManager::startStreaming()
 	return false;
 }
 
-bool CameraManager::stopStreaming()
-{
-	if (controller != nil)
-	{
-		if ([controller stopStreaming])
-		{
+bool CameraManager::stopStreaming() {
+	if (controller != nil) {
+		if ([controller stopStreaming]) {
 			return true;
 		}
 	}
@@ -150,7 +77,52 @@ bool CameraManager::stopStreaming()
 	return false;
 }
 
-bool CameraManager::isStreaming()
+void CameraManager::setImageCallback(std::function<void(Camera::CameraImageCallback* callback)> callback)
+//void CameraManager::setImageCallback(void (*callback)())
 {
-	return true;
+	if (callback == nullptr)
+		return;
+	Camera::CameraImageCallback::setCameraImageCallback(callback);
+	//onCaptureImageOutput = callback;
+	//ImageCallbackWrapper::callback_ = std::move(callback);
 }
+
+void CameraManager::imageCallback()
+{
+	NSLog(@"CameraManager::imageCallback");
+}
+
+void CameraManager::receiveImageCallback(Camera::CameraImageCallback* callback)
+{
+	NSLog(@"CameraManager::receiveImageCallback");
+	
+	//NSLog(@"%02X, %02X", image[0], image[1]);
+	//NSLog(@"bufferWidth: %zu, bufferHeight: %zu, bufferSize: %zu, bytesPerRow: %zu",
+	//	  imageBuffer->getWidth(), imageBuffer->getHeight(), imageBuffer->getBufferSize(), imageBuffer->getBytesPerRow());
+}
+/*
+void CameraManager::startCaptureThread()
+{
+	runningCaptureThread_.store(true);
+	captureThread_ = std::thread(&CameraManager::captureThread, this);
+}
+
+void CameraManager::stopCaptureThread()
+{
+	runningCaptureThread_.store(false);
+}
+
+void CameraManager::closeCaptureThread()
+{
+	if (captureThread_.joinable())
+		captureThread_.join();
+}
+
+void CameraManager::captureThread()
+{
+	while (runningCaptureThread_.load())
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(30));
+	}
+}
+*/

@@ -1,5 +1,4 @@
-#include "CameraExport.hpp"
-
+#include "CameraExport.h"
 #include "CameraManager.hpp"
 
 CameraManager* manager = nullptr;
@@ -54,7 +53,17 @@ bool CameraExport::startStreaming()
 {
 	if (manager != nullptr)
 	{
-		return manager->startStreaming();
+		/*
+		if (manager->setCameraImageCallback(callback) == false)
+		{
+			return false;
+		}
+		*/
+		if (manager->startStreaming())
+		{
+			streaming_ = true;
+			return true;
+		}
 	}
 	
 	return false;
@@ -62,9 +71,14 @@ bool CameraExport::startStreaming()
 
 bool CameraExport::stopStreaming()
 {
+	streaming_ = false;
+	
 	if (manager != nullptr)
 	{
-		return manager->stopStreaming();
+		if (manager->stopStreaming())
+		{
+			return true;
+		}
 	}
 	
 	return false;
@@ -72,5 +86,5 @@ bool CameraExport::stopStreaming()
 
 bool CameraExport::isStreaming()
 {
-	return true;
+	return streaming_;
 }
