@@ -1,22 +1,17 @@
-#import "CameraModule.hpp"
+#include "CameraModule.h"
+#include "CameraWrapper.h"
 
-#include "CameraExport.hpp"
-
-CameraExport* cameraExport = nullptr;
+CameraWrapper* cameraWrapper = nullptr;
 
 @implementation CameraModule
 
-- (bool) connect
-{
-	if (cameraExport == nullptr)
-	{
-		cameraExport = new CameraExport();
+- (bool) connect {
+	if (cameraWrapper == nullptr) {
+		cameraWrapper = new CameraWrapper();
 	}
 	
-	if (cameraExport != nullptr)
-	{
-		if (cameraExport->connect())
-		{
+	if (cameraWrapper != nullptr) {
+		if (cameraWrapper->connect()) {
 			return true;
 		}
 	}
@@ -24,33 +19,26 @@ CameraExport* cameraExport = nullptr;
 	return false;
 }
 
-- (bool) isConnected
-{
+- (bool) isConnected {
 	return true;
 }
 
-- (bool) disconnect
-{
-	if (cameraExport != nullptr)
-	{
-		if (cameraExport->disconnect() == false)
-		{
+- (bool) disconnect {
+	if (cameraWrapper != nullptr) {
+		if (cameraWrapper->disconnect() == false) {
 			// return false;
 		}
 		
-		delete cameraExport;
-		cameraExport = nullptr;
+		delete cameraWrapper;
+		cameraWrapper = nullptr;
 	}
 	
 	return true;
 }
 
-- (bool) startStreaming
-{
-	if (cameraExport != nullptr)
-	{
-		if (cameraExport->startStreaming())
-		{
+- (bool) startStreaming {
+	if (cameraWrapper != nullptr) {
+		if (cameraWrapper->startStreaming()) {
 			return true;
 		}
 	}
@@ -58,12 +46,9 @@ CameraExport* cameraExport = nullptr;
 	return false;
 }
 
-- (bool) stopStreaming
-{
-	if (cameraExport != nullptr)
-	{
-		if (cameraExport->stopStreaming())
-		{
+- (bool) stopStreaming {
+	if (cameraWrapper != nullptr) {
+		if (cameraWrapper->stopStreaming()) {
 			return true;
 		}
 	}
@@ -71,8 +56,7 @@ CameraExport* cameraExport = nullptr;
 	return false;
 }
 
-- (bool) isStreaming
-{
+- (bool) isStreaming {
 	return true;
 }
 

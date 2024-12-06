@@ -4,8 +4,6 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "CameraControllerDelegate.h"
-
 @interface CameraController : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong) AVCaptureDevice* captureDevice;
@@ -13,8 +11,6 @@
 @property (nonatomic, strong) dispatch_queue_t videoQueue;
 @property (nonatomic) bool isWebCam;
 @property (nonatomic) bool isConnected;
-
-@property (nonatomic, weak) id<CameraControllerDelegate> cameraControllerDelegate;
 
 - (bool) isAuthorized;
 - (bool) isCameraExist;

@@ -2,5 +2,5 @@
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
 
-#include "CameraController.hpp"
-#include "CameraModule.hpp"
+#include "CameraController.h"
+#include "CameraModule.h"

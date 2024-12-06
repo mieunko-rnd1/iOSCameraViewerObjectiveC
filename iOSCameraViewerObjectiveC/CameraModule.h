@@ -1,7 +1,12 @@
 #ifndef CameraModule_h
 #define CameraModule_h
 
+#import "CameraTypes.h"
+#import "CameraHelper.h"
+
 #import <Foundation/Foundation.h>
+
+#import <functional>
 
 @interface CameraModule : NSObject
 

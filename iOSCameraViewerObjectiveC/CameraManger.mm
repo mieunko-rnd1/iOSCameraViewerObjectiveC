@@ -1,115 +1,31 @@
-#include "CameraManager.hpp"
-
-#include "CameraController.hpp"
-#include "CameraControllerDelegate.h"
-
+#include "CameraManager.h"
+#include "CameraController.h"
 
 CameraController* controller = nil;
 
-@interface CameraDelegate : NSObject <CameraControllerDelegate>
-
-@property (nonatomic) ImageBuffer* imageBuffer;
-@property (nonatomic) bool isConnected;
-
-@end // CameraDelegate
-
-@implementation CameraDelegate
-
-- (bool)activateDelegate {
-	if (controller != nil) {
-		controller.cameraControllerDelegate = self;
-		
-		self.imageBuffer = new ImageBuffer;
-		self.isConnected = true;
-		
-		return true;
-	}
-	
-	return false;
-}
-
-- (void)deactivateDelegate {
-	self.isConnected = false;
-	
-	if (self.imageBuffer) {
-		delete[] self.imageBuffer;
-		self.imageBuffer = nullptr;
-	}
-}
-
-- (bool)getRawImageBuffer:(ImageBuffer&)imageBuffer {
-	if (self.isConnected == false)
-		return false;
-	
-	if (self.imageBuffer == nullptr)
-		return false;
-	
-	imageBuffer = *self.imageBuffer;
-	
-	return true;
-}
-
-- (void)captureImageOutput:(unsigned char*)image width:(size_t)width height:(size_t)height bufferSize:(size_t)bufferSize bytesPerRow:(size_t)bytesPerRow {
-	self.imageBuffer->setBuffer(image, width, height, bufferSize, bytesPerRow);
-	
-	NSLog(@"%02X, %02X", image[0], image[1]);
-	NSLog(@"bytesPerRow: %zu, bufferWidth: %zu, bufferHeight: %zu, bufferSize: %zu", bytesPerRow, width, height, bufferSize);
-}
-
-@end // CameraDelegate
-
-
-CameraDelegate* camDelegate = nil;
-
-CameraManager::CameraManager()
-{
-	
-}
-
-CameraManager::~CameraManager()
-{
-	
-}
-
-bool CameraManager::connect()
-{
+bool CameraManager::connect() {
 	if (controller == nil)
 		controller = [[CameraController alloc] init];
-		//controller = [CameraController new];
-	
-	if (camDelegate == nil)
-		camDelegate = [[CameraDelegate alloc] init];
 	
 	if (controller != nil)
 	{
 		if ([controller connect])
 		{
-			if (camDelegate != nil)
-			{
-				if ([camDelegate activateDelegate]) {
-					return true;
-				}
-			}
+			// Test code
+			// setImageCallback(std::bind(&CameraManager::runImageCallback, this, std::placeholders::_1));
+			return true;
 		}
 	}
 	
 	return false;
 }
 
-bool CameraManager::isConnected()
-{
+bool CameraManager::isConnected() {
 	return false;
 }
 
 bool CameraManager::disconnect()
 {
-	[camDelegate deactivateDelegate];
-	
-	if (camDelegate != nil) {
-		[camDelegate release];
-		camDelegate = nil;
-	}
-	
 	if (controller != nil)
 	{
 		if ([controller disconnect] == false)
@@ -124,12 +40,9 @@ bool CameraManager::disconnect()
 	return true;
 }
 
-bool CameraManager::startStreaming()
-{
-	if (controller != nil)
-	{
-		if ([controller startStreaming])
-		{
+bool CameraManager::startStreaming() {
+	if (controller != nil) {
+		if ([controller startStreaming]) {
 			return true;
 		}
 	}
@@ -137,12 +50,9 @@ bool CameraManager::startStreaming()
 	return false;
 }
 
-bool CameraManager::stopStreaming()
-{
-	if (controller != nil)
-	{
-		if ([controller stopStreaming])
-		{
+bool CameraManager::stopStreaming() {
+	if (controller != nil) {
+		if ([controller stopStreaming]) {
 			return true;
 		}
 	}
@@ -150,7 +60,18 @@ bool CameraManager::stopStreaming()
 	return false;
 }
 
-bool CameraManager::isStreaming()
+void CameraManager::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
 {
-	return true;
+	if (callback == nullptr)
+		return;
+	
+	Camera::ImageCallbacks::callback_ = std::move(callback);
+}
+
+// Test code
+void CameraManager::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
+{
+	NSLog(@"buffer: %02X, %02X", imageBuffer->buffer_[0], imageBuffer->buffer_[1]);
+	NSLog(@"bufferWidth: %d, bufferHeight: %d, bufferSize: %d, bytesPerRow: %d, imageCount: %d",
+		  imageBuffer->width_, imageBuffer->height_, imageBuffer->bufferSize_, imageBuffer->bytesPerRow_, imageBuffer->imageCount_);
 }
