@@ -1,24 +1,7 @@
-#include "CameraManager.hpp"
-
-#include "CameraController.hpp"
-
-
-std::function<void(Camera::CameraImageCallback*)> ImageCallbackWrapper::callback_ = nullptr;
-void ImageCallbackWrapper::imageCallback(Camera::CameraImageCallback* callback)
-{
-	if (ImageCallbackWrapper::callback_)
-		return ImageCallbackWrapper::callback_(callback);
-}
+#include "CameraManager.h"
+#include "CameraController.h"
 
 CameraController* controller = nil;
-
-CameraManager::CameraManager() {
-	
-}
-
-CameraManager::~CameraManager() {
-	
-}
 
 bool CameraManager::connect() {
 	if (controller == nil)
@@ -28,8 +11,8 @@ bool CameraManager::connect() {
 	{
 		if ([controller connect])
 		{
-			setImageCallback(std::bind(&CameraManager::receiveImageCallback, this, std::placeholders::_1));
-			//Camera::ImageCallbacks::setCameraImageCallback(CameraManager::imageCallback);
+			// Test code
+			// setImageCallback(std::bind(&CameraManager::runImageCallback, this, std::placeholders::_1));
 			return true;
 		}
 	}
@@ -77,52 +60,18 @@ bool CameraManager::stopStreaming() {
 	return false;
 }
 
-void CameraManager::setImageCallback(std::function<void(Camera::CameraImageCallback* callback)> callback)
-//void CameraManager::setImageCallback(void (*callback)())
+void CameraManager::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
 {
 	if (callback == nullptr)
 		return;
-	Camera::CameraImageCallback::setCameraImageCallback(callback);
-	//onCaptureImageOutput = callback;
-	//ImageCallbackWrapper::callback_ = std::move(callback);
-}
-
-void CameraManager::imageCallback()
-{
-	NSLog(@"CameraManager::imageCallback");
-}
-
-void CameraManager::receiveImageCallback(Camera::CameraImageCallback* callback)
-{
-	NSLog(@"CameraManager::receiveImageCallback");
 	
-	//NSLog(@"%02X, %02X", image[0], image[1]);
-	//NSLog(@"bufferWidth: %zu, bufferHeight: %zu, bufferSize: %zu, bytesPerRow: %zu",
-	//	  imageBuffer->getWidth(), imageBuffer->getHeight(), imageBuffer->getBufferSize(), imageBuffer->getBytesPerRow());
-}
-/*
-void CameraManager::startCaptureThread()
-{
-	runningCaptureThread_.store(true);
-	captureThread_ = std::thread(&CameraManager::captureThread, this);
+	Camera::ImageCallbacks::callback_ = std::move(callback);
 }
 
-void CameraManager::stopCaptureThread()
+// Test code
+void CameraManager::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
 {
-	runningCaptureThread_.store(false);
+	NSLog(@"buffer: %02X, %02X", imageBuffer->buffer_[0], imageBuffer->buffer_[1]);
+	NSLog(@"bufferWidth: %d, bufferHeight: %d, bufferSize: %d, bytesPerRow: %d, imageCount: %d",
+		  imageBuffer->width_, imageBuffer->height_, imageBuffer->bufferSize_, imageBuffer->bytesPerRow_, imageBuffer->imageCount_);
 }
-
-void CameraManager::closeCaptureThread()
-{
-	if (captureThread_.joinable())
-		captureThread_.join();
-}
-
-void CameraManager::captureThread()
-{
-	while (runningCaptureThread_.load())
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(30));
-	}
-}
-*/

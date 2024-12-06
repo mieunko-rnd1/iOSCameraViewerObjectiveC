@@ -1,20 +1,17 @@
 #ifndef CameraHelper_h
 #define CameraHelper_h
 
+#include "CameraTypes.h"
+
 #include <functional>
 
 namespace Camera
 {
-typedef void(*CameraImageCallback)();
-
 class ImageCallbacks
 {
 public:
-	static void setCameraImageCallback(std::function<void(unsigned int)> callback);
-	static void captureImageOutput(unsigned int value);
-	
-private:
-	static std::function<void(unsigned int)> callback_;
+	static std::function<void(std::shared_ptr<ImageBuffer>)> callback_;
+	static void updateImageCallback(std::shared_ptr<ImageBuffer>);
 };
 }
 

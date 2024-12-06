@@ -1,7 +1,10 @@
-#include "CameraController.hpp"
-#include "CameraHelper.h"
+#import "CameraController.h"
+#import "CameraHelper.h"
+#import "CameraTypes.h"
 
 #import <UIKit/UIKit.h>
+
+#include <iostream>
 
 @implementation CameraController
 
@@ -357,7 +360,7 @@
 
 // https://gist.github.com/AllanChen/94bb2a0f418af25bdfd408076408516d
 // https://stackoverflow.com/questions/25659671/how-to-convert-from-yuv-to-ciimage-for-ios
-int imageSaveCount = 0;
+unsigned int imageSaveCount = 0;
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
 	// Get Raw Pixel
 	CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
@@ -378,7 +381,13 @@ int imageSaveCount = 0;
 	unsigned char* byteData = (unsigned char*)malloc(len);
 	memcpy(byteData, [nsData bytes], len);
 	
-	Camera::ImageCallbacks::captureImageOutput();
+	std::shared_ptr<ImageBuffer> imageBufferInfo = std::make_shared<ImageBuffer>(byteData,
+																				 static_cast<unsigned int>(width),
+																				 static_cast<unsigned int>(height),
+																				 static_cast<unsigned int>(bufferSize),
+																				 static_cast<unsigned int>(bytesPerRow),
+																				 imageSaveCount);
+	Camera::ImageCallbacks::updateImageCallback(imageBufferInfo);
 	
 	/*
 	if (self.isWebCam == false) {
