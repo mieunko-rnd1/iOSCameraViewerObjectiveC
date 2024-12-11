@@ -1,13 +1,13 @@
 #include "CameraModule.h"
-#include "CameraWrapper.h"
+#include "HubCameraWrapper.h"
 
-CameraWrapper* cameraWrapper = nullptr;
+HubCameraWrapper* cameraWrapper = nullptr;
 
 @implementation CameraModule
 
 - (bool) connect {
 	if (cameraWrapper == nullptr) {
-		cameraWrapper = new CameraWrapper();
+		cameraWrapper = new HubCameraWrapper();
 	}
 	
 	if (cameraWrapper != nullptr) {
@@ -23,17 +23,13 @@ CameraWrapper* cameraWrapper = nullptr;
 	return true;
 }
 
-- (bool) disconnect {
+- (void) disconnect {
 	if (cameraWrapper != nullptr) {
-		if (cameraWrapper->disconnect() == false) {
-			// return false;
-		}
+		cameraWrapper->disconnect();
 		
 		delete cameraWrapper;
 		cameraWrapper = nullptr;
 	}
-	
-	return true;
 }
 
 - (bool) startStreaming {

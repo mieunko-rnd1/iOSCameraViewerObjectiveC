@@ -1,28 +1,28 @@
-#ifndef CameraWrapper_h
-#define CameraWrapper_h
+#ifndef HubCameraManager_h
+#define HubCameraManager_h
 
 #include "CameraTypes.h"
 #include "CameraHelper.h"
 
-class CameraWrapper
+#include <functional>
+
+class HubCameraManager
 {
 public:
-	CameraWrapper() = default;
-	~CameraWrapper() = default;
+	HubCameraManager() = default;
+	~HubCameraManager() = default;
 	
 	bool connect();
 	bool isConnected();
-	bool disconnect();
+	void disconnect();
 	bool startStreaming();
 	bool stopStreaming();
-	bool isStreaming();
 	
 	void setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback);
 	
 private:
-	bool streaming_ = false;
-	
 	// Test code
 	void runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer);
 };
-#endif // CameraWrapper_h
+
+#endif // HubCameraManager_h

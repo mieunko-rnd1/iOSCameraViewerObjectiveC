@@ -1,15 +1,15 @@
-#include "CameraWrapper.h"
-#include "CameraManager.h"
+#include "HubCameraWrapper.h"
+#include "HubCameraManager.h"
 
 #include <cstdio>
 
-CameraManager* manager = nullptr;
+HubCameraManager* manager = nullptr;
 
-bool CameraWrapper::connect()
+bool HubCameraWrapper::connect()
 {
 	if (manager == nullptr)
 	{
-		manager = new CameraManager();
+		manager = new HubCameraManager();
 	}
 	
 	if (manager != nullptr)
@@ -25,28 +25,23 @@ bool CameraWrapper::connect()
 	return false;
 }
 
-bool CameraWrapper::isConnected()
+bool HubCameraWrapper::isConnected()
 {
 	return true;
 }
 
-bool CameraWrapper::disconnect()
+void HubCameraWrapper::disconnect()
 {
 	if (manager != nullptr)
 	{
-		if (manager->disconnect() == false)
-		{
-			// return false;
-		}
+		manager->disconnect();
 		
 		delete manager;
 		manager = nullptr;
 	}
-	
-	return true;
 }
 
-bool CameraWrapper::startStreaming()
+bool HubCameraWrapper::startStreaming()
 {
 	if (manager != nullptr)
 	{
@@ -60,7 +55,7 @@ bool CameraWrapper::startStreaming()
 	return false;
 }
 
-bool CameraWrapper::stopStreaming()
+bool HubCameraWrapper::stopStreaming()
 {
 	streaming_ = false;
 	
@@ -75,12 +70,12 @@ bool CameraWrapper::stopStreaming()
 	return false;
 }
 
-bool CameraWrapper::isStreaming()
+bool HubCameraWrapper::isStreaming()
 {
 	return streaming_;
 }
 
-void CameraWrapper::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
+void HubCameraWrapper::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
 {
 	if ((manager == nullptr) || (callback == nullptr))
 		return;
@@ -89,7 +84,7 @@ void CameraWrapper::setImageCallback(std::function<void(std::shared_ptr<ImageBuf
 }
 
 // Test code
-void CameraWrapper::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
+void HubCameraWrapper::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
 {
 	printf("buffer: %02X, %02X", imageBuffer->buffer_[0], imageBuffer->buffer_[1]);
 	printf("bufferWidth: %d, bufferHeight: %d, bufferSize: %d, bytesPerRow: %d, imageCount: %d",

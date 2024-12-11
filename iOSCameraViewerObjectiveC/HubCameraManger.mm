@@ -1,11 +1,11 @@
-#include "CameraManager.h"
-#include "CameraController.h"
+#include "HubCameraManager.h"
+#include "HubCameraController.h"
 
-CameraController* controller = nil;
+HubCameraController* controller = nil;
 
-bool CameraManager::connect() {
+bool HubCameraManager::connect() {
 	if (controller == nil)
-		controller = [[CameraController alloc] init];
+		controller = [[HubCameraController alloc] init];
 	
 	if (controller != nil)
 	{
@@ -20,27 +20,22 @@ bool CameraManager::connect() {
 	return false;
 }
 
-bool CameraManager::isConnected() {
+bool HubCameraManager::isConnected() {
 	return false;
 }
 
-bool CameraManager::disconnect()
+void HubCameraManager::disconnect()
 {
 	if (controller != nil)
 	{
-		if ([controller disconnect] == false)
-		{
-			//return false;
-		}
+		[controller disconnect];
 		
 		[controller release];
 		controller = nil;
 	}
-	
-	return true;
 }
 
-bool CameraManager::startStreaming() {
+bool HubCameraManager::startStreaming() {
 	if (controller != nil) {
 		if ([controller startStreaming]) {
 			return true;
@@ -50,7 +45,7 @@ bool CameraManager::startStreaming() {
 	return false;
 }
 
-bool CameraManager::stopStreaming() {
+bool HubCameraManager::stopStreaming() {
 	if (controller != nil) {
 		if ([controller stopStreaming]) {
 			return true;
@@ -60,7 +55,7 @@ bool CameraManager::stopStreaming() {
 	return false;
 }
 
-void CameraManager::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
+void HubCameraManager::setImageCallback(std::function<void(std::shared_ptr<ImageBuffer>)> callback)
 {
 	if (callback == nullptr)
 		return;
@@ -69,7 +64,7 @@ void CameraManager::setImageCallback(std::function<void(std::shared_ptr<ImageBuf
 }
 
 // Test code
-void CameraManager::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
+void HubCameraManager::runImageCallback(std::shared_ptr<ImageBuffer> imageBuffer)
 {
 	NSLog(@"buffer: %02X, %02X", imageBuffer->buffer_[0], imageBuffer->buffer_[1]);
 	NSLog(@"bufferWidth: %d, bufferHeight: %d, bufferSize: %d, bytesPerRow: %d, imageCount: %d",

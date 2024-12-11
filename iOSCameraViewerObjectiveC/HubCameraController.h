@@ -1,10 +1,10 @@
-#ifndef CameraController_h
-#define CameraController_h
+#ifndef HubCameraController_h
+#define HubCameraController_h
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-@interface CameraController : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface HubCameraController : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong) AVCaptureDevice* captureDevice;
 @property (nonatomic, strong) AVCaptureSession* captureSession;
@@ -20,11 +20,11 @@
 - (bool) prepareVideoOutput;
 
 - (bool) connect;
-- (bool) disconnect;
+- (void) disconnect;
 - (bool) startStreaming;
 - (bool) stopStreaming;
 - (void) captureOutput:(AVCaptureOutput*)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection*)connection;
 
-@end // CameraController
+@end // HubCameraController
 
-#endif // CameraController_h
+#endif // HubCameraController_h

@@ -12,7 +12,7 @@
 
 - (bool) connect;
 - (bool) isConnected;
-- (bool) disconnect;
+- (void) disconnect;
 - (bool) startStreaming;
 - (bool) stopStreaming;
 - (bool) isStreaming;

@@ -1,4 +1,4 @@
-#import "CameraController.h"
+#import "HubCameraController.h"
 #import "CameraHelper.h"
 #import "CameraTypes.h"
 
@@ -6,7 +6,12 @@
 
 #include <iostream>
 
-@implementation CameraController
+@implementation HubCameraController
+
+int const width = 1104;
+int const height = 6440;
+double const frameRate = 30.0;
+NSString* const fourCC = @"420f"; // "420v" or "420f"
 
 - (bool) isAuthorized {
 	bool isAuth = false;
@@ -16,14 +21,14 @@
 	}
 	
 	if (status == AVAuthorizationStatusNotDetermined) {
-		NSLog(@"권한 요청 전 상태");
+		NSLog(@"Request access");
 		// 권한 요청
 		[AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
 			if (granted) {
-				NSLog(@"권한 허용");
+				NSLog(@"Permission allowed!");
 			}
 			else {
-				NSLog(@"권한 거부");
+				NSLog(@"Permission denied ... !");
 			}
 		}];
 		
@@ -36,28 +41,31 @@
 }
 
 - (bool) isCameraExist {
-	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
-	AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-	NSArray* devices = sessions.devices;
 	bool isFound = false;
 	
-	if ([devices count] == 0)
-		return isFound;
-	
-	for (AVCaptureDevice* device in devices) {
-		if([device deviceType] == AVCaptureDeviceTypeExternal) {
-			const char* name = [[device localizedName] UTF8String];
-			NSString* strName = [NSString stringWithUTF8String:name];
-			if ([strName  isEqual: @"C270 HD WEBCAM"]) {
-				isFound = true;
-				self.isWebCam = true;
-			}
-			else if ([strName  isEqual: @"Medit MO3"]) {
-				isFound = true;
-			}
-			
-			if (isFound) {
-				break;
+	if (@available(iOS 17.0, *)) {
+		NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
+		AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+		NSArray* devices = sessions.devices;
+		
+		if ([devices count] == 0)
+			return isFound;
+		
+		for (AVCaptureDevice* device in devices) {
+			if([device deviceType] == AVCaptureDeviceTypeExternal) {
+				const char* name = [[device localizedName] UTF8String];
+				NSString* strName = [NSString stringWithUTF8String:name];
+				if ([strName  isEqual: @"C270 HD WEBCAM"]) {
+					isFound = true;
+					self.isWebCam = true;
+				}
+				else if ([strName  isEqual: @"Medit MO3"]) {
+					isFound = true;
+				}
+				
+				if (isFound) {
+					break;
+				}
 			}
 		}
 	}
@@ -66,22 +74,24 @@
 }
 
 - (NSString*) getDetectCameraDeviceName {
-	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
-	AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-	NSArray* devices = sessions.devices;
-	
-	if ([devices count] == 0)
-		return @"";
-	
-	for (AVCaptureDevice* device in devices) {
-		if([device deviceType] == AVCaptureDeviceTypeExternal) {
-			const char* name = [[device localizedName] UTF8String];
-			NSString* strName = [NSString stringWithUTF8String:name];
-			if ([strName  isEqual: @"C270 HD WEBCAM"]) {
-				return strName;
-			}
-			else if ([strName  isEqual: @"Medit MO3"]) {
-				return strName;
+	if (@available(iOS 17.0, *)) {
+		NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
+		AVCaptureDeviceDiscoverySession* sessions = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+		NSArray* devices = sessions.devices;
+		
+		if ([devices count] == 0)
+			return @"";
+		
+		for (AVCaptureDevice* device in devices) {
+			if([device deviceType] == AVCaptureDeviceTypeExternal) {
+				const char* name = [[device localizedName] UTF8String];
+				NSString* strName = [NSString stringWithUTF8String:name];
+				if ([strName  isEqual: @"C270 HD WEBCAM"]) {
+					return strName;
+				}
+				else if ([strName  isEqual: @"Medit MO3"]) {
+					return strName;
+				}
 			}
 		}
 	}
@@ -144,12 +154,6 @@
 	}
 	
 	@try {
-		// 원하는 포맷 설정
-		int width = 1104;
-		int height = 6440;
-		double frameRate = 30.0;
-		NSString* fourCC = @"420f"; // 예: "420v" 또는 "420f"
-		
 		if ([self setVideoInputFormat:width height:height frameRate:frameRate fourCC:fourCC] == false) {
 			NSLog(@"Failed to set video format...!");
 			return false;
@@ -197,8 +201,8 @@
 	else {
 		NSDictionary* videoSettings = @{
 			(id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
-			(id)kCVPixelBufferWidthKey : @(1104),  // maxWidth // 1920 // 1104
-			(id)kCVPixelBufferHeightKey : @(6440) // maxHeight // 1080 // 6440
+			(id)kCVPixelBufferWidthKey : @(width),
+			(id)kCVPixelBufferHeightKey : @(height)
 		};
 		
 		output.videoSettings = videoSettings;
@@ -239,34 +243,40 @@
 	self.isConnected = false;
 	
 	bool isFound = false;
-	NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
-	AVCaptureDeviceDiscoverySession* discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
-	NSArray* devices = discoverySession.devices;
 	
-	if ([devices count] == 0) {
-		NSLog(@"Cannot found capture devices...!");
-		return false;
-	}
-	
-	// Capture Session에 대한 입력을 제공
-	for (AVCaptureDevice* device in devices) {
-		if([device deviceType] == AVCaptureDeviceTypeExternal) {
-			const char* name = [[device localizedName] UTF8String];
-			NSString* strName = [NSString stringWithUTF8String:name];
-			if ([strName  isEqual: @"C270 HD WEBCAM"]) {
-				isFound = true;
-				self.isWebCam = true;
-			}
-			else if ([strName  isEqual: @"Medit MO3"]) {
-				isFound = true;
-			}
-			
-			if (isFound) {
-				self.captureDevice = device;
-				NSLog(@"Find External Camera: %s\n", name);
-				break;
+	if (@available(iOS 17.0, *)) {
+		NSArray* allTypes = @[AVCaptureDeviceTypeExternal];
+		AVCaptureDeviceDiscoverySession* discoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:allTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+		NSArray* devices = discoverySession.devices;
+		
+		if ([devices count] == 0) {
+			NSLog(@"Cannot found capture devices...!");
+			return false;
+		}
+		
+		// Capture Session에 대한 입력을 제공
+		for (AVCaptureDevice* device in devices) {
+			if([device deviceType] == AVCaptureDeviceTypeExternal) {
+				const char* name = [[device localizedName] UTF8String];
+				NSString* strName = [NSString stringWithUTF8String:name];
+				if ([strName  isEqual: @"C270 HD WEBCAM"]) {
+					isFound = true;
+					self.isWebCam = true;
+				}
+				else if ([strName  isEqual: @"Medit MO3"]) {
+					isFound = true;
+				}
+				
+				if (isFound) {
+					self.captureDevice = device;
+					NSLog(@"Find External Camera: %s\n", name);
+					break;
+				}
 			}
 		}
+	}
+	else {
+		return false;
 	}
 	
 	NSLog(@"Unique ID: %@, Model ID: %@", self.captureDevice.uniqueID, self.captureDevice.modelID);
@@ -297,10 +307,12 @@
 	
 	self.isConnected = true;
 	
+	NSLog(@"Camera connected!");
+	
 	return true;
 }
 
-- (bool) disconnect {
+- (void) disconnect {
 	self.isConnected = false;
 	
 	[self.captureSession beginConfiguration];
@@ -319,7 +331,7 @@
 	self.captureDevice = NULL; // ????
 	self.videoQueue = NULL;
 	
-	return true;
+	NSLog(@"Camera disconnected!");
 }
 
 - (bool) startStreaming {
@@ -327,7 +339,6 @@
 		return true;
 	}
 	
-	NSLog(@"session start %@", self.captureSession);
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
 		//Background Thread
 		dispatch_async(self.videoQueue, ^(void){
@@ -335,6 +346,8 @@
 			[self.captureSession startRunning];
 		});
 	});
+	
+	NSLog(@"session start %@", self.captureSession);
 	/*
 	dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		//dispatch_async( self.sampleBufferCallbackQueue, ^{
@@ -352,8 +365,9 @@
 		return true;
 	}
 	
-	NSLog(@"session stop");
 	[self.captureSession stopRunning];
+	
+	NSLog(@"session stop");
 	
 	return true;
 }
@@ -494,4 +508,4 @@ unsigned int imageSaveCount = 0;
 	imageSaveCount++;
 }
 
-@end // CameraController
+@end // HubCameraController
